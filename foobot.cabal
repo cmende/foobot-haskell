@@ -1,0 +1,26 @@
+name:                foobot
+version:             0.1.0
+synopsis:            Initial project template from stack
+description:         Please see README.md
+homepage:            https://github.com/cmende/foobot#readme
+license:             MIT
+license-file:        LICENSE
+author:              Christoph Mende
+maintainer:          mende.christoph@gmail.com
+copyright:           2016
+category:            IRC
+build-type:          Simple
+extra-source-files:  README.md
+cabal-version:       >=1.10
+
+executable foobot-exe
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , network
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/cmende/foobot-haskell
