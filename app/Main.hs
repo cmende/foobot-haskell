@@ -1,5 +1,7 @@
 module Main where
 
+import           Control.Exception.Base
+import           Control.Monad.Reader
 import           Data.List
 import           Network
 import           System.IO
@@ -10,31 +12,52 @@ port = 6667
 channel = "##foob0t"
 nick = "failb0t"
 
+data Bot = Bot { socket :: Handle }
+
+type Net = ReaderT Bot IO
+
 main :: IO ()
-main = do
-  h <- connectTo server (PortNumber (fromIntegral port))
-  hSetBuffering h NoBuffering
-  write h "NICK" nick
-  write h "USER" (nick ++ " 0 * :foob0t")
-  write h "JOIN" channel
-  listen h
+main = bracket connect disconnect loop
+  where
+    disconnect = hClose . socket
+    loop       = runReaderT run
 
-write :: Handle -> String -> String -> IO ()
-write h s t = do
-  hPrintf h "%s %s\r\n" s t
-  printf    "> %s %s\n" s t
+connect :: IO Bot
+connect = notify $ do
+    h <- connectTo server (PortNumber (fromIntegral port))
+    hSetBuffering h NoBuffering
+    return (Bot h)
+  where
+    notify = bracket_
+      (printf "Connecting to %s..." server >> hFlush stdout)
+      (putStrLn "done.")
 
-listen :: Handle -> IO ()
+run :: Net ()
+run = do
+    write "NICK" nick
+    write "USER" (nick ++ " 0 * :foob0t")
+    write "JOIN" channel
+    asks socket >>= listen
+
+write :: String -> String -> Net ()
+write s t = do
+  h <- asks socket
+  io $ hPrintf h "%s %s\r\n" s t
+  io $ printf    "> %s %s\n" s t
+
+listen :: Handle -> Net ()
 listen h = loop $ do
-  t <- hGetLine h
-  let s = init t
-  if ping s then pong s else eval h (clean s)
-  putStrLn s
+  s <- fmap init (io (hGetLine h))
+  io (putStrLn s)
+  if ping s then pong s else eval (clean s)
   where
     loop a = a >> loop a
     clean = drop 1 . dropWhile (/= ':') . drop 1
     ping x = "PING :" `isPrefixOf` x
-    pong x = write h "PONG" (':' : drop 6 x)
+    pong x = write "PONG" (':' : drop 6 x)
 
-eval :: Handle -> String -> IO ()
-eval _ _ = return ()
+eval :: String -> Net ()
+eval _ = return ()
+
+io :: IO a -> Net a
+io = liftIO
