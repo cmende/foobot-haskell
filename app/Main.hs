@@ -58,12 +58,17 @@ listen h = loop $ do
 
 eval :: String -> Net ()
 eval x
-  | "!" `isPrefixOf` x            = runCmd (drop 1 x)
-  | (nick ++ ": ") `isPrefixOf` x = runCmd (drop (length nick + 2) x)
+  | "!" `isPrefixOf` x            = parseCmd (drop 1 x)
+  | (nick ++ ": ") `isPrefixOf` x = parseCmd (drop (length nick + 2) x)
   | otherwise                     = return ()
 
-runCmd :: String -> Net ()
-runCmd _ = privmsg channel "test"
+parseCmd :: String -> Net ()
+parseCmd s = runCmd (takeWhile (/= ' ') s) ((drop 1 . dropWhile (/= ' ')) s)
+
+runCmd :: String -> String -> Net ()
+runCmd "id" a = privmsg channel a
+runCmd "hi" _ = privmsg channel "hi"
+runCmd _ _    = return ()
 
 privmsg :: String -> String -> Net ()
 privmsg t s = write "PRIVMSG" (t ++ " :" ++ s)
