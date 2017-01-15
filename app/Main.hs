@@ -41,18 +41,18 @@ run = do
 
 write :: String -> String -> Net ()
 write s t = do
-  h <- asks socket
-  io $ hPrintf h "%s %s\r\n" s t
-  io $ printf    "> %s %s\n" s t
+    h <- asks socket
+    io $ hPrintf h "%s %s\r\n" s t
+    io $ printf    "> %s %s\n" s t
 
 listen :: Handle -> Net ()
 listen h = loop $ do
-  s <- fmap init (io (hGetLine h))
-  io (putStrLn s)
-  if ping s then pong s else eval (clean s)
+    s <- fmap init (io (hGetLine h))
+    io (putStrLn s)
+    if ping s then pong s else eval (clean s)
   where
     loop a = a >> loop a
-    clean = drop 1 . dropWhile (/= ':') . drop 1
+    clean  = drop 1 . dropWhile (/= ':') . drop 1
     ping x = "PING :" `isPrefixOf` x
     pong x = write "PONG" (':' : drop 6 x)
 
