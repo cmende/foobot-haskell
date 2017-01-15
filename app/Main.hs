@@ -63,7 +63,9 @@ eval x
   | otherwise                     = return ()
 
 parseCmd :: String -> Net ()
-parseCmd s = runCmd (takeWhile (/= ' ') s) ((drop 1 . dropWhile (/= ' ')) s)
+parseCmd s = let
+  (c,a) = break (== ' ') s
+  in runCmd c (drop 1 a)
 
 runCmd :: String -> String -> Net ()
 runCmd "id" a = privmsg channel a
