@@ -57,7 +57,16 @@ listen h = loop $ do
     pong x = write "PONG" (':' : drop 6 x)
 
 eval :: String -> Net ()
-eval _ = return ()
+eval x
+  | "!" `isPrefixOf` x            = runCmd (drop 1 x)
+  | (nick ++ ": ") `isPrefixOf` x = runCmd (drop (length nick + 2) x)
+  | otherwise                     = return ()
+
+runCmd :: String -> Net ()
+runCmd _ = privmsg channel "test"
+
+privmsg :: String -> String -> Net ()
+privmsg t s = write "PRIVMSG" (t ++ " :" ++ s)
 
 io :: IO a -> Net a
 io = liftIO
